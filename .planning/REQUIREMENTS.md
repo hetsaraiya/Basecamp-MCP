@@ -229,7 +229,7 @@
 | FR-8.2 | Phase 3 | Complete |
 | FR-8.3 | Phase 3 | Complete |
 | FR-8.4 | Phase 3 | Complete |
-| FR-8.5 | Phase 4 | Pending |
+| FR-8.5 | Phase 4 | Complete |
 | NFR-1.1 | Phase 2 | Complete |
 | NFR-1.2 | Phase 2 | Complete |
 | NFR-1.3 | Phase 2 | Complete |
@@ -247,5 +247,5 @@
 | NFR-5.2 | Phase 2 | Complete |
 | NFR-5.3 | Phase 2 | Complete |
 | NFR-5.4 | Phase 5 | Pending |
-| NFR-6.1 | Phase 4 | Pending |
-| NFR-6.2 | Phase 4 | Pending |
+| NFR-6.1 | Phase 4 | Complete |
+| NFR-6.2 | Phase 4 | Complete |

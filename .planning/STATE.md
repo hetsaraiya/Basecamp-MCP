@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 4 of 5 (Transport and Agent Integration) - Not started
-Plan: 03-02 complete (Phase 3 fully complete — 2 of 2 plans)
-Status: Phase 3 Complete — all 11 MCP tools registered and human-verified in MCP Inspector against real Basecamp data
-Last activity: 2026-02-19 — Phase 3 Plan 02 executed: 4 remaining tools added, src/mcp.ts stdio entry point created, MCP Inspector checkpoint passed
+Phase: 4 of 5 (Transport and Agent Integration) - In progress (1 of 2 plans complete)
+Plan: 04-01 complete — StreamableHTTP transport, per-user /mcp/<uuid> routing, session lifecycle, index.ts entry point
+Status: Phase 4 Plan 01 Complete — Streamable HTTP transport wired, agents can now connect via personal MCP URL
+Last activity: 2026-02-19 — Phase 4 Plan 01 executed: mcp_token column added, OAuth callback returns mcp_url, /mcp/:userToken route with session Map, src/index.ts TRANSPORT-conditional entry point
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 4 min
-- Total execution time: 25 min
+- Total execution time: 32 min
 
 **By Phase:**
 
@@ -30,13 +30,15 @@ Progress: [███████░░░] 70%
 | 01-oauth-foundation | 2 | 8 min | 4 min |
 | 02-api-client-infrastructure | 2 | 8 min | 4 min |
 | 03-mcp-tool-definitions | 2 | 9 min | 4.5 min |
+| 04-transport-and-agent-integration | 1 | 7 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 3 min, 4 min, 4 min, 4 min, 4 min
+- Last 5 plans: 4 min, 4 min, 4 min, 4 min, 7 min
 - Trend: stable
 
 *Updated after each plan completion*
 | Phase 03-mcp-tool-definitions P02 | 5 | 1 tasks | 3 files |
+| Phase 04-transport-and-agent-integration P01 | 7 | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -76,6 +78,10 @@ Recent decisions affecting current work:
 - [Phase 03-01]: get_message and get_todo use client.get<>() directly (single resource fetch, no paginate wrapper needed)
 - [Phase 03-02]: server.registerTool() used for all 4 new tools — consistent with existing 7 tools; not the deprecated server.tool() form
 - [Phase 03-02]: list_campfire_lines effectiveSince: defaults to 24h ago only when both since and limit are undefined — explicit limit with no since means 'most recent N', not time-filtered (FR-6.2)
+- [Phase 04-01]: mcp_token stored as UUID in SQLite; getByMcpToken() resolves URL key to TokenRecord — no Authorization header needed (per prior architecture decision)
+- [Phase 04-01]: sessions Map<string, Session> for O(1) session-to-user binding; onsessioninitialized fires before response so Map is populated before any tool call arrives
+- [Phase 04-01]: TRANSPORT=stdio in src/index.ts uses dynamic import to avoid loading Express/StreamableHTTP in stdio mode
+- [Phase 04-01]: randomUUID() imported from node:crypto for explicit type safety under NodeNext moduleResolution
 
 ### Pending Todos
 
@@ -88,5 +94,5 @@ None — all pre-phase-3 blockers resolved 2026-02-19.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 03-02-PLAN.md — 4 remaining tools, src/mcp.ts stdio entry point, MCP Inspector checkpoint human-verified. Phase 3 fully complete (2/2 plans). Ready for Phase 4 (Transport and Agent Integration).
+Stopped at: Completed 04-01-PLAN.md — StreamableHTTP transport wired, /mcp/:userToken route with session lifecycle, src/index.ts TRANSPORT-conditional entry point. Phase 4 Plan 01 complete (1/2 plans). Ready for Phase 4 Plan 02.
 Resume file: None
