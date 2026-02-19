@@ -199,9 +199,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FR-1.1 | Phase 1 | Pending |
-| FR-1.2 | Phase 1 | Pending |
-| FR-1.3 | Phase 1 | Pending |
+| FR-1.1 | Phase 1 | Complete |
+| FR-1.2 | Phase 1 | Complete |
+| FR-1.3 | Phase 1 | Complete |
 | FR-1.4 | Phase 1 | Pending |
 | FR-1.5 | Phase 1 | Pending |
 | FR-1.6 | Phase 1 | Pending |
