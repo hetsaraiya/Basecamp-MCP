@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import { tokenStore } from './auth/store.js';
 import { startAuthFlow, handleCallback, getTokenForUser } from './auth/oauth.js';
@@ -19,9 +20,21 @@ app.get('/oauth/callback', async (req, res) => {
   }
   try {
     const tokenRecord = await handleCallback(code);
-    tokenStore.save(tokenRecord);   // Persist to SQLite
+    tokenStore.save(tokenRecord);
+
+    // Issue a stable UUID that becomes the user's personal MCP URL key.
+    // Architecture decision (STATE.md 2026-02-19): unique URL per user, no Authorization header.
+    const mcpToken = randomUUID();
+    tokenStore.saveMcpToken(tokenRecord.basecampUserId, mcpToken);
+
+    // Derive base URL for the MCP endpoint — strip the /oauth/callback path
+    const redirectUri = process.env.BASECAMP_REDIRECT_URI ?? 'http://localhost:3000/oauth/callback';
+    const baseUrl = redirectUri.replace(/\/oauth\/callback$/, '');
+    const mcpUrl = `${baseUrl}/mcp/${mcpToken}`;
+
     res.json({
-      message: 'OAuth complete — token stored',
+      message: 'OAuth complete — paste your MCP URL into Claude Desktop or Cursor',
+      mcp_url: mcpUrl,
       user: {
         basecampUserId: tokenRecord.basecampUserId,
         email: tokenRecord.email,
