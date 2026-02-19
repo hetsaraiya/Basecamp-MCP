@@ -64,7 +64,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: HTTP client core — `got` v14 instance, `withRateLimit()` (Retry-After + exponential backoff + jitter), concurrent request cap, read-only enforcement
+- [x] 02-01: HTTP client core — `got` v14 instance, `withRateLimit()` (Retry-After + exponential backoff + jitter), concurrent request cap, read-only enforcement
 - [ ] 02-02: Content layer — `paginate()` following Link headers, HTML-to-markdown pipeline (including `<bc-attachment>`, `<mention>`, `<bc-gallery>`), zod response schemas for all 6 content types, response size enforcement (100-item / 50KB cap)
 
 ---
@@ -208,7 +208,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. OAuth Foundation | 2/2 | Complete   | 2026-02-19 |
-| 2. API Client Infrastructure | 0/2 | Not started | - |
+| 2. API Client Infrastructure | 1/2 | In Progress | - |
 | 3. MCP Tool Definitions | 0/2 | Not started | - |
 | 4. Transport and Agent Integration | 0/2 | Not started | - |
 | 5. Hardening | 0/2 | Not started | - |

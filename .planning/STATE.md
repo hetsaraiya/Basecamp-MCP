@@ -9,29 +9,30 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 1 of 5 (OAuth Foundation) - COMPLETE
-Plan: 2 of 2 in phase 1 - COMPLETE
-Status: Phase 1 Complete — Ready for Phase 2
-Last activity: 2026-02-19 — Plan 01-02 complete: TokenStore, getTokenForUser(), /oauth/revoke endpoint
+Phase: 2 of 5 (API Client Infrastructure) - In Progress
+Plan: 1 of 3 in phase 2 - COMPLETE
+Status: Phase 2 Plan 1 Complete — Ready for Plan 2 (Content Methods)
+Last activity: 2026-02-19 — Plan 02-01 complete: BasecampClient with got v14, rate-limit wrapper, concurrency semaphore
 
-Progress: [██░░░░░░░░] 20%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 3
 - Average duration: 4 min
-- Total execution time: 8 min
+- Total execution time: 12 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-oauth-foundation | 2 | 8 min | 4 min |
+| 02-api-client-infrastructure | 1 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 3 min
-- Trend: improving
+- Last 5 plans: 5 min, 3 min, 4 min
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -54,6 +55,10 @@ Recent decisions affecting current work:
 - [Phase 01-02]: expires_at stored as milliseconds INTEGER — direct match with Date.getTime(), no conversion layer
 - [Phase 01-02]: getTokenForUser() uses 5-min REFRESH_BUFFER_MS to avoid expiry mid-request
 - [Phase 01-02]: refreshMutexes exported from store.ts, managed in oauth.ts — store owns data, oauth owns lifecycle
+- [Phase 02-01]: got@14 ESM default import style; all local imports use .js extension per NodeNext moduleResolution
+- [Phase 02-01]: got built-in retry disabled (retry: { limit: 0 }) — withRateLimit owns all 429 retry logic, prevents double-retry
+- [Phase 02-01]: unwrapHookError() added — got wraps beforeRequest hook errors in RequestError; callers must receive ReadOnlyError directly
+- [Phase 02-01]: getRaw() returns full Response<unknown> for Link header access by Plan 02-02 pagination layer
 
 ### Pending Todos
 
@@ -68,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 01-02-PLAN.md — TokenStore, getTokenForUser(), /oauth/revoke complete; Phase 1 done; Phase 2 next
+Stopped at: Completed 02-01-PLAN.md — BasecampClient (got v14), withRateLimit, computeBackoffDelay, concurrency semaphore; Phase 2 Plan 1 done; Plan 02-02 next
 Resume file: None

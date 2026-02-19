@@ -230,9 +230,9 @@
 | FR-8.3 | Phase 3 | Pending |
 | FR-8.4 | Phase 3 | Pending |
 | FR-8.5 | Phase 4 | Pending |
-| NFR-1.1 | Phase 2 | Pending |
-| NFR-1.2 | Phase 2 | Pending |
-| NFR-1.3 | Phase 2 | Pending |
+| NFR-1.1 | Phase 2 | Complete |
+| NFR-1.2 | Phase 2 | Complete |
+| NFR-1.3 | Phase 2 | Complete |
 | NFR-2.1 | Phase 2 | Pending |
 | NFR-2.2 | Phase 2 | Pending |
 | NFR-2.3 | Phase 2 | Pending |
@@ -243,9 +243,9 @@
 | NFR-4.2 | Phase 2 | Pending |
 | NFR-4.3 | Phase 2 | Pending |
 | NFR-4.4 | Phase 2 | Pending |
-| NFR-5.1 | Phase 2 | Pending |
-| NFR-5.2 | Phase 2 | Pending |
-| NFR-5.3 | Phase 2 | Pending |
+| NFR-5.1 | Phase 2 | Complete |
+| NFR-5.2 | Phase 2 | Complete |
+| NFR-5.3 | Phase 2 | Complete |
 | NFR-5.4 | Phase 5 | Pending |
 | NFR-6.1 | Phase 4 | Pending |
 | NFR-6.2 | Phase 4 | Pending |
