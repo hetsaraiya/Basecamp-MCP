@@ -1,6 +1,26 @@
 import got, { type Got, type Response } from 'got';
 import { type BasecampCredentials, type BasecampRequestOptions, ReadOnlyError } from './types.js';
 import { withRateLimit } from './rate-limit.js';
+import { paginate, type PaginatedResult } from './paginate.js';
+import { htmlToMarkdown } from './html-to-markdown.js';
+import {
+  ProjectSchema,
+  type Project,
+  MessageSchema,
+  type Message,
+  TodoSchema,
+  TodoListSchema,
+  type Todo,
+  type TodoList,
+  DocumentSchema,
+  DocumentSummarySchema,
+  type Document,
+  type DocumentSummary,
+  CampfireLineSchema,
+  type CampfireLine,
+  AttachmentSchema,
+  type Attachment,
+} from './schemas/index.js';
 
 /**
  * Unwraps got's RequestError wrapper when the cause is a ReadOnlyError.
@@ -29,6 +49,16 @@ function unwrapHookError(error: unknown): never {
  *   - accountId is never accepted as a method parameter (NFR-5.2)
  *   - Max 5 concurrent in-flight requests per instance (NFR-1.3)
  *   - All requests wrapped in withRateLimit for 429 handling (NFR-1.1, NFR-1.2)
+ *
+ * Content endpoint methods (Plan 02-02):
+ *   - listProjects()
+ *   - listMessages()
+ *   - listTodoLists()
+ *   - listTodos()
+ *   - listDocuments()
+ *   - getDocument()
+ *   - listCampfireLines()
+ *   - listAttachments()
  */
 export class BasecampClient {
   private readonly accessToken: string;
@@ -113,7 +143,7 @@ export class BasecampClient {
   /**
    * getRaw — returns the full got Response object.
    *
-   * Used by Plan 02-02's paginate() to access the `link` response header
+   * Used by paginate() to access the `link` response header
    * for cursor-based pagination through Basecamp's Link headers.
    */
   async getRaw(path: string, options?: BasecampRequestOptions): Promise<Response<unknown>> {
@@ -131,5 +161,224 @@ export class BasecampClient {
     } finally {
       this.release();
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * normalizeEnvelopeFields — extracts common fields from a raw Basecamp object.
+   *
+   * Centralizes the field name mapping that is consistent across content types:
+   *   id, app_url → url, creator/author → author, created_at, updated_at.
+   * Title mapping varies per content type — callers pass it explicitly.
+   */
+  private normalizeEnvelopeFields(raw: Record<string, unknown>) {
+    return {
+      id: raw['id'],
+      title: raw['title'] ?? raw['name'] ?? raw['subject'] ?? raw['filename'] ?? '',
+      author: raw['creator'] ?? raw['author'],
+      created_at: raw['created_at'],
+      updated_at: raw['updated_at'],
+      url: raw['app_url'],
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Content endpoint methods
+  // ---------------------------------------------------------------------------
+
+  /**
+   * listProjects — returns a paginated list of all active Basecamp projects.
+   *
+   * Raw field mapping: name→title, app_url→url, creator→author, description→description
+   */
+  async listProjects(page = 1): Promise<PaginatedResult<Project>> {
+    return paginate(this, 'projects.json', page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return ProjectSchema.parse({
+        id: r['id'],
+        title: r['name'],
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        status: r['status'],
+        description: r['description'] ?? '',
+      });
+    });
+  }
+
+  /**
+   * listMessages — returns paginated messages from a project's message board.
+   *
+   * Raw field mapping: subject→title, content (HTML)→content (markdown), app_url→url
+   */
+  async listMessages(
+    bucketId: number,
+    boardId: number,
+    page = 1,
+  ): Promise<PaginatedResult<Message>> {
+    const path = `buckets/${bucketId}/message_boards/${boardId}/messages.json`;
+    return paginate(this, path, page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return MessageSchema.parse({
+        id: r['id'],
+        title: r['subject'],
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        content: htmlToMarkdown(r['content'] as string),
+      });
+    });
+  }
+
+  /**
+   * listTodoLists — returns paginated todo lists from a project's todoset.
+   *
+   * Raw field mapping: name→title, description (HTML)→content (markdown), app_url→url
+   */
+  async listTodoLists(
+    bucketId: number,
+    todoSetId: number,
+    page = 1,
+  ): Promise<PaginatedResult<TodoList>> {
+    const path = `buckets/${bucketId}/todosets/${todoSetId}/todolists.json`;
+    return paginate(this, path, page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return TodoListSchema.parse({
+        id: r['id'],
+        title: r['name'],
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        content: htmlToMarkdown(r['description'] as string),
+        todos_count: r['todos_count'],
+      });
+    });
+  }
+
+  /**
+   * listTodos — returns paginated todos from a specific todo list.
+   *
+   * Raw field mapping: content (the title text)→title, description (HTML)→content (markdown)
+   */
+  async listTodos(
+    bucketId: number,
+    todoListId: number,
+    page = 1,
+  ): Promise<PaginatedResult<Todo>> {
+    const path = `buckets/${bucketId}/todolists/${todoListId}/todos.json`;
+    return paginate(this, path, page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return TodoSchema.parse({
+        id: r['id'],
+        title: r['content'],            // Basecamp: "content" is the todo title text
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        content: htmlToMarkdown(r['description'] as string),  // description is HTML notes
+        completed: r['completed'],
+        due_on: r['due_on'] ?? null,
+      });
+    });
+  }
+
+  /**
+   * listDocuments — returns paginated documents with truncated content (first 500 chars).
+   *
+   * Uses DocumentSummarySchema to enforce NFR-4.3: document list truncation.
+   * Full content available only via getDocument().
+   */
+  async listDocuments(
+    bucketId: number,
+    vaultId: number,
+    page = 1,
+  ): Promise<PaginatedResult<DocumentSummary>> {
+    const path = `buckets/${bucketId}/vaults/${vaultId}/documents.json`;
+    return paginate(this, path, page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return DocumentSummarySchema.parse({
+        id: r['id'],
+        title: r['title'],
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        content: htmlToMarkdown(r['content'] as string),
+      });
+    });
+  }
+
+  /**
+   * getDocument — returns a single document with full content.
+   *
+   * Not paginated — fetches a single resource by ID.
+   */
+  async getDocument(bucketId: number, documentId: number): Promise<Document> {
+    const raw = await this.get<Record<string, unknown>>(
+      `buckets/${bucketId}/documents/${documentId}.json`,
+    );
+    return DocumentSchema.parse({
+      ...this.normalizeEnvelopeFields(raw),
+      content: htmlToMarkdown(raw['content'] as string),
+    });
+  }
+
+  /**
+   * listCampfireLines — returns paginated chat lines from a Campfire room.
+   *
+   * Raw field mapping: (no title on campfire lines — defaults to ''), content (HTML)→markdown
+   */
+  async listCampfireLines(
+    bucketId: number,
+    chatId: number,
+    page = 1,
+  ): Promise<PaginatedResult<CampfireLine>> {
+    const path = `buckets/${bucketId}/chats/${chatId}/lines.json`;
+    return paginate(this, path, page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return CampfireLineSchema.parse({
+        id: r['id'],
+        title: '',                       // Campfire lines have no title field
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        content: htmlToMarkdown(r['content'] as string),
+      });
+    });
+  }
+
+  /**
+   * listAttachments — returns paginated attachment metadata (no binary content, NFR-4.4).
+   *
+   * Raw field mapping: filename→title, app_url→url (deeplink, NOT download URL)
+   */
+  async listAttachments(
+    bucketId: number,
+    vaultId: number,
+    page = 1,
+  ): Promise<PaginatedResult<Attachment>> {
+    const path = `buckets/${bucketId}/vaults/${vaultId}/attachments.json`;
+    return paginate(this, path, page, (raw) => {
+      const r = raw as Record<string, unknown>;
+      return AttachmentSchema.parse({
+        id: r['id'],
+        title: r['filename'],
+        author: r['creator'],
+        created_at: r['created_at'],
+        updated_at: r['updated_at'],
+        url: r['app_url'],
+        content: '',                     // Always empty — no binary content (NFR-4.4)
+        content_type: r['content_type'],
+        byte_size: r['byte_size'],
+        download_url: r['download_url'] as string | undefined,
+      });
+    });
   }
 }
