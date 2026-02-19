@@ -49,6 +49,9 @@ COPY package.json ./
 # Directory for SQLite token store — mount a volume here for persistence
 RUN mkdir -p /app/data && chown mcp:mcp /app/data
 
+# Declare volume so Docker initializes it from the image (preserving mcp ownership)
+VOLUME ["/app/data"]
+
 USER mcp
 
 EXPOSE 3000
