@@ -59,17 +59,37 @@ export function startAuthFlow(redirectUri: string): string {
 
 export async function handleCallback(code: string): Promise<TokenRecord> {
   // 1. Exchange code for tokens
-  const tokenParams = { code, redirect_uri: process.env.BASECAMP_REDIRECT_URI! };
-  const accessToken = await client.getToken(tokenParams);
+  // Basecamp Launchpad expects all params as query string (same as refresh flow).
+  // simple-oauth2's client.getToken() sends credentials via Basic Auth header — 400s.
+  const tokenParams = new URLSearchParams({
+    type: 'web_server',
+    client_id: process.env.BASECAMP_CLIENT_ID!,
+    client_secret: process.env.BASECAMP_CLIENT_SECRET!,
+    redirect_uri: process.env.BASECAMP_REDIRECT_URI!,
+    code,
+  });
+  const tokenRes = await fetch(
+    `https://launchpad.37signals.com/authorization/token?${tokenParams.toString()}`,
+    { method: 'POST' },
+  );
+  if (!tokenRes.ok) {
+    const body = await tokenRes.text().catch(() => '');
+    throw new Error(`Token exchange failed: ${tokenRes.status} ${tokenRes.statusText} — ${body}`);
+  }
+  const tokenData = await tokenRes.json() as {
+    access_token: string;
+    refresh_token: string;
+    expires_in?: number;
+  };
 
   // 2. Compute expiresAt — default to 7200 seconds if expires_in is absent
-  const expiresIn = (accessToken.token.expires_in as number | undefined) ?? 7200;
+  const expiresIn = tokenData.expires_in ?? 7200;
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
   // 3. Fetch identity to resolve account_id
   const identityRes = await fetch('https://launchpad.37signals.com/authorization.json', {
     headers: {
-      'Authorization': `Bearer ${accessToken.token.access_token as string}`,
+      'Authorization': `Bearer ${tokenData.access_token}`,
       'User-Agent': 'Basecamp MCP (internal@openxcell.com)',
     },
   });
@@ -92,8 +112,8 @@ export async function handleCallback(code: string): Promise<TokenRecord> {
 
   // 5. Return TokenRecord — storage handled by TokenStore (wired in server.ts)
   return {
-    accessToken: accessToken.token.access_token as string,
-    refreshToken: accessToken.token.refresh_token as string,
+    accessToken: tokenData.access_token,
+    refreshToken: tokenData.refresh_token,
     expiresAt,
     accountId: String(bc3Account.id),
     basecampUserId: identity.identity.id,
