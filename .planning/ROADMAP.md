@@ -209,6 +209,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. OAuth Foundation | 2/2 | Complete   | 2026-02-19 |
 | 2. API Client Infrastructure | 1/2 | In Progress | - |
-| 3. MCP Tool Definitions | 0/2 | Not started | - |
+| 3. MCP Tool Definitions | 1/2 | In Progress|  |
 | 4. Transport and Agent Integration | 0/2 | Not started | - |
 | 5. Hardening | 0/2 | Not started | - |

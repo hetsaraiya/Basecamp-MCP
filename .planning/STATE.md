@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 2 of 5 (API Client Infrastructure) - Complete
-Plan: Phase 2 fully complete
-Status: Phase 2 Complete — Ready to plan Phase 3
-Last activity: 2026-02-19 — Pre-phase-3 blocker research complete; all blockers resolved; architectural decisions recorded
+Phase: 3 of 5 (MCP Tool Definitions) - In Progress
+Plan: 03-01 complete (1 of N plans in Phase 3)
+Status: Phase 3 Plan 01 Complete — 7 MCP tools registered via createTools() factory
+Last activity: 2026-02-19 — Phase 3 Plan 01 executed: MCP SDK installed, schemas extended, 7 tools created
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 4 min
-- Total execution time: 16 min
+- Total execution time: 20 min
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 01-oauth-foundation | 2 | 8 min | 4 min |
 | 02-api-client-infrastructure | 2 | 8 min | 4 min |
+| 03-mcp-tool-definitions | 1 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 3 min, 4 min, 4 min
+- Last 5 plans: 3 min, 4 min, 4 min, 4 min, 4 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -67,6 +68,11 @@ Recent decisions affecting current work:
 - [Phase 02-02]: node-html-parser chosen over turndown/marked — handles Basecamp custom tags (bc-attachment, mention, bc-gallery) natively via tagName switch; lightweight ESM-compatible
 - [Phase 02-02]: paginate<T>() transform callback pattern — schema parse inside callback keeps paginate() fully generic; field-mapping logic co-located with field-mapping table
 - [Phase 02-02]: AttachmentSchema content hardcoded to '' at call site (not in schema) — eliminates any accidental binary content data path (NFR-4.4)
+- [Phase 03-01]: @modelcontextprotocol/sdk resolved to ^1.26.0 (latest stable, satisfies ^1.15.0 minimum for authInfo passthrough in StreamableHTTPServerTransport)
+- [Phase 03-01]: createTools(userId, tokenStore) factory pattern — McpServer created per session; Phase 4 binds per-user userId without tool-layer changes
+- [Phase 03-01]: All tool handlers use static top-level imports (htmlToMarkdown, MessageSchema, TodoSchema) — no dynamic await import() calls
+- [Phase 03-01]: list_projects and list_todos filter results client-side after paginate() — Basecamp API returns mixed statuses/completion states
+- [Phase 03-01]: get_message and get_todo use client.get<>() directly (single resource fetch, no paginate wrapper needed)
 
 ### Pending Todos
 
@@ -79,5 +85,5 @@ None — all pre-phase-3 blockers resolved 2026-02-19.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Pre-phase-3 blocker research complete. Phase 2 done. All 3 blockers resolved. Auth model decided (unique URL per user). Dock lookup decided (getProject method). Ready to run /gsd:plan-phase 3.
+Stopped at: Completed 03-01-PLAN.md — 7 MCP tools via createTools() factory, typed error module, schema extensions, BasecampClient.getProject(). Phase 3 Plan 01 complete. Ready for Phase 3 Plan 02 (if exists) or Phase 4.
 Resume file: None
