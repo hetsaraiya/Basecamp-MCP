@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Any AI agent can access the full context of a Basecamp project on demand, so it can act intelligently on real project knowledge — not guesses.
-**Current focus:** Phase 1 — OAuth Foundation
+**Current focus:** Phase 2 — API Client Infrastructure
 
 ## Current Position
 
-Phase: 1 of 5 (OAuth Foundation)
-Plan: 1 of 2 in current phase
-Status: In Progress
-Last activity: 2026-02-19 — Plan 01-01 complete: OAuth foundation scaffolded and implemented
+Phase: 1 of 5 (OAuth Foundation) - COMPLETE
+Plan: 2 of 2 in phase 1 - COMPLETE
+Status: Phase 1 Complete — Ready for Phase 2
+Last activity: 2026-02-19 — Plan 01-02 complete: TokenStore, getTokenForUser(), /oauth/revoke endpoint
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5 min
-- Total execution time: 5 min
+- Total plans completed: 2
+- Average duration: 4 min
+- Total execution time: 8 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-oauth-foundation | 1 | 5 min | 5 min |
+| 01-oauth-foundation | 2 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min
-- Trend: -
+- Last 5 plans: 5 min, 3 min
+- Trend: improving
 
 *Updated after each plan completion*
 
@@ -50,6 +50,10 @@ Recent decisions affecting current work:
 - [Phase 01-01]: better-sqlite3 ^12.0.0 used instead of ^9.0.0 — Node 24 requires v12+ for prebuilt binaries
 - [Phase 01-01]: @types/simple-oauth2 added as devDependency — simple-oauth2 v5 ships no bundled .d.ts files
 - [Phase 01-01]: Type assertion for authorizeURL to pass Basecamp-required type=web_server param not in @types definitions
+- [Phase 01-02]: UPSERT pattern in TokenStore.save() (ON CONFLICT DO UPDATE) for idempotent re-auth flows
+- [Phase 01-02]: expires_at stored as milliseconds INTEGER — direct match with Date.getTime(), no conversion layer
+- [Phase 01-02]: getTokenForUser() uses 5-min REFRESH_BUFFER_MS to avoid expiry mid-request
+- [Phase 01-02]: refreshMutexes exported from store.ts, managed in oauth.ts — store owns data, oauth owns lifecycle
 
 ### Pending Todos
 
@@ -64,5 +68,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 01-01-PLAN.md — OAuth foundation scaffolded; Plan 01-02 (TokenStore) next
+Stopped at: Completed 01-02-PLAN.md — TokenStore, getTokenForUser(), /oauth/revoke complete; Phase 1 done; Phase 2 next
 Resume file: None

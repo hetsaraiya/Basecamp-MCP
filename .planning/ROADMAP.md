@@ -17,7 +17,7 @@ Any OpenXcell team member can connect their AI agent to a running MCP server, au
 
 ## Phases
 
-- [ ] **Phase 1: OAuth Foundation** - Any team member can authenticate with Basecamp and receive a stored, auto-refreshing token
+- [x] **Phase 1: OAuth Foundation** - Any team member can authenticate with Basecamp and receive a stored, auto-refreshing token (completed 2026-02-19)
 - [ ] **Phase 2: API Client Infrastructure** - A BasecampClient that handles all 6 content types with rate limiting, pagination, and HTML-to-markdown
 - [ ] **Phase 3: MCP Tool Definitions** - All 11 MCP tools functional and testable in MCP Inspector
 - [ ] **Phase 4: Transport and Agent Integration** - Real agents (Claude Desktop, Cursor) can connect and use tools with per-user auth
@@ -207,7 +207,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. OAuth Foundation | 1/2 | In Progress|  |
+| 1. OAuth Foundation | 2/2 | Complete   | 2026-02-19 |
 | 2. API Client Infrastructure | 0/2 | Not started | - |
 | 3. MCP Tool Definitions | 0/2 | Not started | - |
 | 4. Transport and Agent Integration | 0/2 | Not started | - |
