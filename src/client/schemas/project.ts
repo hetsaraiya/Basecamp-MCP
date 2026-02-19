@@ -18,7 +18,7 @@ const AuthorSchema = z.object({
 export const ProjectSchema = z.object({
   id: z.number(),
   title: z.string(),
-  author: AuthorSchema,
+  author: AuthorSchema.nullable().optional().default(null),
   created_at: z.string(),
   updated_at: z.string(),
   url: z.string(),
