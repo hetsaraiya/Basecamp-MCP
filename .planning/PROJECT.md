@@ -35,7 +35,7 @@ Any AI agent can access the full context of a Basecamp project on demand, so it 
 
 ## Context
 
-- **Platform**: Basecamp 3 (basecamp.com/3626692) — OpenXcell organization
+- **Platform**: Basecamp 3 ([3.basecamp.com/3626692](https://3.basecamp.com/3626692)) — OpenXcell organization
 - **Basecamp API**: Basecamp 3 REST API + OAuth 2.0, well-documented at github.com/basecamp/bc3-api
 - **MCP protocol**: Anthropic's Model Context Protocol — defines how tools are exposed to agents
 - **Team need**: Project managers and engineers want to point an agent at a client project and have it generate plans, requirements docs, summaries, etc. from real project history
