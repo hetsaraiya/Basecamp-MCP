@@ -32,6 +32,9 @@ RUN npm prune --omit=dev
 # =============================================================================
 FROM node:22-alpine AS runner
 
+# su-exec: lightweight tool to drop from root → mcp inside entrypoint
+RUN apk add --no-cache su-exec
+
 # Create a non-root user for security
 RUN addgroup -S mcp && adduser -S mcp -G mcp
 
@@ -46,13 +49,15 @@ COPY --from=builder /app/dist ./dist
 # Copy package.json (needed for "type": "module" and engines field at runtime)
 COPY package.json ./
 
+# Entrypoint: creates /app/data if missing, fixes ownership, drops to mcp
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Directory for SQLite token store — mount a volume here for persistence
 RUN mkdir -p /app/data && chown mcp:mcp /app/data
 
 # Declare volume so Docker initializes it from the image (preserving mcp ownership)
 VOLUME ["/app/data"]
-
-USER mcp
 
 EXPOSE 3000
 
@@ -61,5 +66,6 @@ ENV SQLITE_PATH=/app/data/tokens.db \
     NODE_ENV=production \
     PORT=3000
 
-# HTTP server mode (TRANSPORT unset → server.ts startServer())
+# Run as root so entrypoint can fix permissions, then drops to mcp
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "dist/index.js"]
