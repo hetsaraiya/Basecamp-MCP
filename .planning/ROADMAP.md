@@ -96,7 +96,7 @@ Plans:
 **Depends on**: Phase 3
 **Requirements**: FR-8.5, NFR-6.1, NFR-6.2
 **Stack**: `@modelcontextprotocol/sdk` (StreamableHTTPServerTransport), `express` 4.21
-**Research needed**: Phase 4 planning should review MCP SDK `^1.6.x` source and any published multi-user examples before implementing the session-to-user binding. The exact pattern for mapping `StreamableHTTPServerTransport` session IDs to Basecamp user IDs is architectural inference, not a documented SDK pattern.
+**Research needed**: Resolved 2026-02-19 — StreamableHTTPServerTransport session-to-user binding confirmed via SDK source inspection. Auth model decided: unique URL per user (/mcp/:userToken), no Authorization header. Session-map pattern chosen.
 **Success Criteria** (what must be TRUE):
   1. Claude Desktop or Cursor connects to the server and lists tools without error
   2. Two team members can be connected simultaneously; each agent's tool calls return data from only that user's Basecamp account
@@ -105,8 +105,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Streamable HTTP transport — `POST/GET/DELETE /mcp` on Express, bearer token middleware, session-to-user-ID binding, `StreamableHTTPServerTransport` wiring to tool layer
-- [ ] 04-02: Agent smoke test and stdio mode — end-to-end test with Claude Desktop or Cursor against live Basecamp data, `TRANSPORT=stdio` flag implementation, session isolation verification with two simultaneous users
+- [ ] 04-01-PLAN.md — mcp_token column + TokenStore.getByMcpToken() + OAuth callback issues personal MCP URL + /mcp/:userToken POST/GET/DELETE route with StreamableHTTPServerTransport + sessions Map + src/index.ts TRANSPORT conditional entry point
+- [ ] 04-02-PLAN.md — Pre-flight automated checks + human smoke test (agent connection, multi-tool task, session isolation, stdio mode verification)
 
 ---
 
