@@ -1,4 +1,5 @@
 import { AuthorizationCode } from 'simple-oauth2';
+import { tokenStore, refreshMutexes, TokenExpiredError } from './store.js';
 
 // TokenRecord — stored per user, keyed by basecampUserId in Plan 01-02
 export interface TokenRecord {
@@ -9,6 +10,9 @@ export interface TokenRecord {
   basecampUserId: number;
   email: string;
 }
+
+// Re-export TokenExpiredError so callers can import from oauth.ts
+export { TokenExpiredError };
 
 interface BasecampIdentity {
   expires_at: string;
@@ -37,6 +41,12 @@ const client = new AuthorizationCode({
     authorizePath: '/authorization/new',
   },
 });
+
+// How many milliseconds before expiry to proactively refresh (5 minutes)
+const REFRESH_BUFFER_MS = 5 * 60 * 1000;
+
+// The re-auth URL shown to callers when refresh fails
+const REAUTH_URL = `http://localhost:${process.env.PORT ?? 3000}/oauth/start`;
 
 export function startAuthFlow(redirectUri: string): string {
   // Cast to unknown then back to allow Basecamp-specific `type` param
@@ -80,7 +90,7 @@ export async function handleCallback(code: string): Promise<TokenRecord> {
   // Use first bc3 account (single-org team for v1; multi-account out of scope per PROJECT.md)
   const bc3Account = bc3Accounts[0];
 
-  // 5. Return TokenRecord — do NOT store here (TokenStore responsibility in Plan 01-02)
+  // 5. Return TokenRecord — storage handled by TokenStore (wired in server.ts)
   return {
     accessToken: accessToken.token.access_token as string,
     refreshToken: accessToken.token.refresh_token as string,
@@ -89,4 +99,70 @@ export async function handleCallback(code: string): Promise<TokenRecord> {
     basecampUserId: identity.identity.id,
     email: identity.identity.email_address,
   };
+}
+
+export async function getTokenForUser(basecampUserId: number): Promise<TokenRecord> {
+  const record = tokenStore.get(basecampUserId);
+  if (!record) {
+    throw new TokenExpiredError(REAUTH_URL);
+  }
+
+  // Token still valid with buffer — return immediately
+  if (record.expiresAt.getTime() - Date.now() > REFRESH_BUFFER_MS) {
+    return record;
+  }
+
+  // Token expiring — use per-user mutex to prevent duplicate refresh calls
+  const existing = refreshMutexes.get(basecampUserId);
+  if (existing) {
+    return existing;
+  }
+
+  const refreshPromise = refreshTokenForUser(record).finally(() => {
+    refreshMutexes.delete(basecampUserId);
+  });
+  refreshMutexes.set(basecampUserId, refreshPromise);
+  return refreshPromise;
+}
+
+async function refreshTokenForUser(record: TokenRecord): Promise<TokenRecord> {
+  // Basecamp token refresh: POST with type=refresh query param
+  // URL: https://launchpad.37signals.com/authorization/token?type=refresh&refresh_token=<token>&client_id=<id>&client_secret=<secret>
+  const params = new URLSearchParams({
+    type: 'refresh',
+    refresh_token: record.refreshToken,
+    client_id: process.env.BASECAMP_CLIENT_ID!,
+    client_secret: process.env.BASECAMP_CLIENT_SECRET!,
+  });
+
+  let refreshRes: Response;
+  try {
+    refreshRes = await fetch(
+      `https://launchpad.37signals.com/authorization/token?${params.toString()}`,
+      { method: 'POST' }
+    );
+  } catch {
+    throw new TokenExpiredError(REAUTH_URL);
+  }
+
+  if (!refreshRes.ok) {
+    // Refresh failed (e.g., refresh_token revoked) — surface TOKEN_EXPIRED
+    throw new TokenExpiredError(REAUTH_URL);
+  }
+
+  const body = await refreshRes.json() as {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  };
+
+  const refreshed: TokenRecord = {
+    ...record,
+    accessToken: body.access_token,
+    refreshToken: body.refresh_token,   // Basecamp rotates refresh tokens
+    expiresAt: new Date(Date.now() + (body.expires_in ?? 7200) * 1000),
+  };
+
+  tokenStore.save(refreshed);  // Atomic upsert — both tokens updated together
+  return refreshed;
 }

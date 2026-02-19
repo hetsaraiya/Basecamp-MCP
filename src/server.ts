@@ -1,5 +1,6 @@
 import express from 'express';
-import { startAuthFlow, handleCallback } from './auth/oauth.js';
+import { tokenStore } from './auth/store.js';
+import { startAuthFlow, handleCallback, getTokenForUser } from './auth/oauth.js';
 
 export const app = express();
 
@@ -17,10 +18,9 @@ app.get('/oauth/callback', async (req, res) => {
   }
   try {
     const tokenRecord = await handleCallback(code);
-    // Plan 01-02 will wire in TokenStore.save() here.
-    // For now, confirm the flow works by returning the user info (not the tokens — never expose tokens in responses).
+    tokenStore.save(tokenRecord);   // Persist to SQLite
     res.json({
-      message: 'OAuth complete',
+      message: 'OAuth complete — token stored',
       user: {
         basecampUserId: tokenRecord.basecampUserId,
         email: tokenRecord.email,
@@ -31,6 +31,43 @@ app.get('/oauth/callback', async (req, res) => {
     const message = err instanceof Error ? err.message : 'OAuth callback failed';
     res.status(500).json({ error: message });
   }
+});
+
+app.get('/oauth/revoke', async (req, res) => {
+  const userIdParam = req.query.user_id as string | undefined;
+  const basecampUserId = Number(userIdParam);
+  if (!userIdParam || isNaN(basecampUserId)) {
+    res.status(400).json({ error: 'Missing or invalid user_id query param' });
+    return;
+  }
+
+  const record = tokenStore.get(basecampUserId);
+  if (!record) {
+    res.status(404).json({ error: 'No token found for that user_id' });
+    return;
+  }
+
+  // Call Basecamp's DELETE /authorization.json to revoke server-side
+  // This invalidates the token in Basecamp's system
+  try {
+    const revokeRes = await fetch('https://launchpad.37signals.com/authorization.json', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${record.accessToken}`,
+        'User-Agent': 'Basecamp MCP (internal@openxcell.com)',
+      },
+    });
+    // 204 = success; 401 = already expired — either way remove locally
+    if (!revokeRes.ok && revokeRes.status !== 401) {
+      console.warn(`Basecamp revocation returned ${revokeRes.status} for user ${basecampUserId}`);
+    }
+  } catch (err) {
+    // Network error during remote revocation — still remove locally
+    console.warn('Remote revocation failed (network), removing local token:', err);
+  }
+
+  tokenStore.revoke(basecampUserId);
+  res.json({ message: 'Token revoked', basecampUserId });
 });
 
 // Health check
@@ -48,3 +85,6 @@ export function startServer() {
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   startServer();
 }
+
+// Export getTokenForUser for downstream consumers (phases 2+)
+export { getTokenForUser };
