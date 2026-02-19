@@ -15,6 +15,7 @@
  *   @modelcontextprotocol/sdk ^1.15.0 required (not ^1.6.x from stale ROADMAP stack line).
  */
 
+import 'dotenv/config';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { tokenStore } from './auth/store.js';
 import { createTools } from './tools/tools.js';

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { tokenStore } from './auth/store.js';
 import { startAuthFlow, handleCallback, getTokenForUser } from './auth/oauth.js';
