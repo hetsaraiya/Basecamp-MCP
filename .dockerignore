@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+*.db
+.git
+.github
+.planning
+docker
+.dockerignore
+*.md
