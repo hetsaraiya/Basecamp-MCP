@@ -74,7 +74,7 @@ Plans:
 **Why this order**: Tools can be developed and unit-tested against the API client in isolation, without a live HTTP transport. Separating tool definition from transport wiring makes debugging faster — a failing tool is a tool problem, not a transport problem.
 **Depends on**: Phase 2
 **Requirements**: FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-3.1, FR-3.2, FR-3.3, FR-3.4, FR-4.1, FR-4.2, FR-4.3, FR-4.4, FR-5.1, FR-5.2, FR-5.3, FR-6.1, FR-6.2, FR-6.3, FR-7.1, FR-7.2, FR-8.1, FR-8.2, FR-8.3, FR-8.4
-**Stack**: `@modelcontextprotocol/sdk` ^1.6.x, `zod` ^3.24
+**Stack**: `@modelcontextprotocol/sdk` ^1.15.0, `zod` ^4.3.6
 **Research needed**: None — MCP tool definition patterns are documented by Anthropic; zod schema patterns are standard.
 **Success Criteria** (what must be TRUE):
   1. MCP Inspector lists all 11 tools with correct names, descriptions, and input schemas
@@ -85,8 +85,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Project and content tools — `list_projects`, `get_project_tools` (dock introspection), `list_messages`, `get_message`, `list_todolists`, `list_todos`, `get_todo` with zod input schemas and MCP content envelope formatting
-- [ ] 03-02: Remaining tools and error layer — `list_documents`, `get_document`, `list_campfire_lines`, `list_attachments`, typed error responses (`TOKEN_EXPIRED`, `RATE_LIMITED`, `NOT_FOUND`, `TOOL_NOT_ENABLED`, `PERMISSION_DENIED`), MCP `initialize`/`initialized` handshake
+- [ ] 03-01-PLAN.md — SDK install + BasecampClient.getProject() + typed error module (errors.ts) + createTools() factory with 7 tools: `list_projects`, `get_project_tools`, `list_messages`, `get_message`, `list_todolists`, `list_todos`, `get_todo`
+- [ ] 03-02-PLAN.md — 4 remaining tools (`list_documents`, `get_document`, `list_campfire_lines`, `list_attachments`) + stdio entry point (src/mcp.ts) + MCP Inspector verification checkpoint
 
 ---
 
