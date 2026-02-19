@@ -271,5 +271,143 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
     },
   );
 
+  // -------------------------------------------------------------------------
+  // list_documents — FR-5.1, FR-5.3
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'list_documents',
+    {
+      description: 'List documents in a Basecamp project vault. Returns document titles, authors, creation dates, and a preview of the content (first 500 characters). Use get_document to fetch the full content of a specific document. Get vault_id from get_project_tools first.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        vault_id: z.number().int().positive().describe('The vault ID from get_project_tools'),
+        page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      },
+    },
+    async ({ project_id, vault_id, page }) => {
+      try {
+        const record = tokenStore.get(userId);
+        if (!record) return toolError('TOKEN_EXPIRED', 'No token found for user. Re-authenticate at /oauth/start', false);
+        const client = new BasecampClient({ accessToken: record.accessToken, accountId: record.accountId });
+        const result = await client.listDocuments(project_id, vault_id, page);
+        // DocumentSummarySchema already truncates content to 500 chars and sets truncated:true (NFR-4.3)
+        return toolSuccess(result);
+      } catch (error) {
+        return classifyError(error);
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // get_document — FR-5.2, FR-5.3
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'get_document',
+    {
+      description: 'Get a single Basecamp document with full content as markdown. Returns the document title, author (name and email), creation date, last update date, and the complete document body converted to markdown. Use document IDs from list_documents.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        document_id: z.number().int().positive().describe('The document ID from list_documents'),
+      },
+    },
+    async ({ project_id, document_id }) => {
+      try {
+        const record = tokenStore.get(userId);
+        if (!record) return toolError('TOKEN_EXPIRED', 'No token found for user. Re-authenticate at /oauth/start', false);
+        const client = new BasecampClient({ accessToken: record.accessToken, accountId: record.accountId });
+        const document = await client.getDocument(project_id, document_id);
+        return toolSuccess(document);
+      } catch (error) {
+        return classifyError(error);
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // list_campfire_lines — FR-6.1, FR-6.2, FR-6.3
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'list_campfire_lines',
+    {
+      description: 'List chat messages from a Basecamp Campfire room. Returns messages with author names, timestamps, and content as markdown. Defaults to the last 24 hours if neither since nor limit is specified. Get chat_id from get_project_tools first.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        chat_id: z.number().int().positive().describe('The Campfire chat ID from get_project_tools'),
+        since: z.string().optional().describe(
+          'ISO 8601 datetime — return only lines created after this time. Example: "2026-01-15T09:00:00Z". If omitted and limit is also omitted, defaults to 24 hours ago.'
+        ),
+        limit: z.number().int().min(1).max(200).optional().describe(
+          'Maximum number of recent lines to return (1-200). If omitted and since is also omitted, defaults to last 24 hours.'
+        ),
+        page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      },
+    },
+    async ({ project_id, chat_id, since, limit, page }) => {
+      try {
+        const record = tokenStore.get(userId);
+        if (!record) return toolError('TOKEN_EXPIRED', 'No token found for user. Re-authenticate at /oauth/start', false);
+        const client = new BasecampClient({ accessToken: record.accessToken, accountId: record.accountId });
+
+        // FR-6.2: Default to last 24 hours when neither since nor limit is provided
+        const effectiveSince = since ?? (limit == null
+          ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+          : undefined);
+
+        const result = await client.listCampfireLines(project_id, chat_id, page);
+
+        // Apply since filter client-side (Basecamp API does not support since param on chat lines)
+        let items = result.items;
+        if (effectiveSince) {
+          const sinceMs = new Date(effectiveSince).getTime();
+          items = items.filter((line) => new Date(line.created_at).getTime() >= sinceMs);
+        }
+        // Apply limit (take last N items after since filter)
+        if (limit != null) {
+          items = items.slice(-limit);
+        }
+
+        return toolSuccess({ ...result, items, since: effectiveSince ?? null });
+      } catch (error) {
+        return classifyError(error);
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // list_attachments — FR-7.1, FR-7.2
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'list_attachments',
+    {
+      description: 'List file attachments in a Basecamp project vault. Returns metadata only — filename, content type, file size in bytes, a download URL, uploader name, and creation date. Binary content is never fetched. Get vault_id from get_project_tools first.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        vault_id: z.number().int().positive().describe('The vault ID from get_project_tools'),
+        page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      },
+    },
+    async ({ project_id, vault_id, page }) => {
+      try {
+        const record = tokenStore.get(userId);
+        if (!record) return toolError('TOKEN_EXPIRED', 'No token found for user. Re-authenticate at /oauth/start', false);
+        const client = new BasecampClient({ accessToken: record.accessToken, accountId: record.accountId });
+        const result = await client.listAttachments(project_id, vault_id, page);
+        // Map to metadata-only shape per FR-7.2
+        const items = result.items.map((a) => ({
+          id: a.id,
+          filename: a.title,     // AttachmentSchema maps filename->title; reverse for agent clarity
+          content_type: a.content_type,
+          byte_size: a.byte_size,
+          download_url: a.download_url ?? null,
+          creator: a.author.name,
+          created_at: a.created_at,
+        }));
+        return toolSuccess({ ...result, items });
+      } catch (error) {
+        return classifyError(error);
+      }
+    },
+  );
+
   return server;
 }
