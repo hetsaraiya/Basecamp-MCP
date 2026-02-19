@@ -28,27 +28,6 @@ import { htmlToMarkdown } from '../client/html-to-markdown.js';
 import { MessageSchema, TodoSchema } from '../client/schemas/index.js';
 
 // ---------------------------------------------------------------------------
-// Dock lookup helper
-// ---------------------------------------------------------------------------
-
-/**
- * findDockItem — resolves a dock tool's internal Basecamp ID from the project dock.
- *
- * Returns { id, url } for the dock item with the given name, or null if not found
- * or not enabled. Callers check for null and return TOOL_NOT_ENABLED.
- *
- * dock.name values: 'message_board', 'todoset', 'vault', 'chat'
- */
-function findDockItem(
-  dock: Array<{ id: number; name: string; enabled: boolean; url: string }>,
-  name: string,
-): { id: number; url: string } | null {
-  const item = dock.find((d) => d.name === name);
-  if (!item || !item.enabled) return null;
-  return { id: item.id, url: item.url };
-}
-
-// ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
 
@@ -61,16 +40,18 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // list_projects — FR-2.1, FR-2.2, FR-2.3
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'list_projects',
-    'List all Basecamp projects accessible to the authenticated user. Returns project IDs, names, descriptions, statuses, and which tools (messages, todos, docs, campfire) are active in each project. Use project_id from results to call other tools.',
     {
-      status: z.enum(['active', 'archived', 'all']).optional().default('active').describe(
-        'Filter by project status. "active" (default) returns only active projects. "archived" returns archived only. "all" returns both.'
-      ),
-      page: z.number().int().positive().optional().default(1).describe(
-        'Page number for pagination. Check has_more in response to determine if more pages exist.'
-      ),
+      description: 'List all Basecamp projects accessible to the authenticated user. Returns project IDs, names, descriptions, statuses, and which tools (messages, todos, docs, campfire) are active in each project. Use project_id from results to call other tools.',
+      inputSchema: {
+        status: z.enum(['active', 'archived', 'all']).optional().default('active').describe(
+          'Filter by project status. "active" (default) returns only active projects. "archived" returns archived only. "all" returns both.'
+        ),
+        page: z.number().int().positive().optional().default(1).describe(
+          'Page number for pagination. Check has_more in response to determine if more pages exist.'
+        ),
+      },
     },
     async ({ status, page }) => {
       try {
@@ -92,11 +73,13 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // get_project_tools — FR-2.4
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'get_project_tools',
-    'Get the internal tool IDs for a Basecamp project. Returns message_board_id, todoset_id, vault_id, and chat_id needed to call content tools. Also shows which tools are currently enabled. Always call this before calling list_messages, list_todolists, list_documents, or list_campfire_lines for a project you have not queried before.',
     {
-      project_id: z.number().int().positive().describe('The Basecamp project ID from list_projects'),
+      description: 'Get the internal tool IDs for a Basecamp project. Returns message_board_id, todoset_id, vault_id, and chat_id needed to call content tools. Also shows which tools are currently enabled. Always call this before calling list_messages, list_todolists, list_documents, or list_campfire_lines for a project you have not queried before.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID from list_projects'),
+      },
     },
     async ({ project_id }) => {
       try {
@@ -127,13 +110,15 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // list_messages — FR-3.1, FR-3.3, FR-3.4
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'list_messages',
-    'List message board posts in a Basecamp project. Returns message subjects, authors, creation dates, content as markdown, and replies_count. Get message_board_id from get_project_tools first.',
     {
-      project_id: z.number().int().positive().describe('The Basecamp project ID'),
-      message_board_id: z.number().int().positive().describe('The message board ID from get_project_tools'),
-      page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      description: 'List message board posts in a Basecamp project. Returns message subjects, authors, creation dates, content as markdown, and replies_count. Get message_board_id from get_project_tools first.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        message_board_id: z.number().int().positive().describe('The message board ID from get_project_tools'),
+        page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      },
     },
     async ({ project_id, message_board_id, page }) => {
       try {
@@ -151,12 +136,14 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // get_message — FR-3.2, FR-3.3, FR-3.4
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'get_message',
-    'Get a single Basecamp message board post with full content as markdown. Returns the message subject, author (name and email), creation date, and the full post body converted to markdown. Use message IDs from list_messages.',
     {
-      project_id: z.number().int().positive().describe('The Basecamp project ID'),
-      message_id: z.number().int().positive().describe('The message ID from list_messages'),
+      description: 'Get a single Basecamp message board post with full content as markdown. Returns the message subject, author (name and email), creation date, and the full post body converted to markdown. Use message IDs from list_messages.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        message_id: z.number().int().positive().describe('The message ID from list_messages'),
+      },
     },
     async ({ project_id, message_id }) => {
       try {
@@ -187,13 +174,15 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // list_todolists — FR-4.1
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'list_todolists',
-    'List to-do lists in a Basecamp project. Returns list names, descriptions, and item counts. Get todoset_id from get_project_tools first. Use todolist IDs from results to call list_todos.',
     {
-      project_id: z.number().int().positive().describe('The Basecamp project ID'),
-      todoset_id: z.number().int().positive().describe('The todoset ID from get_project_tools'),
-      page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      description: 'List to-do lists in a Basecamp project. Returns list names, descriptions, and item counts. Get todoset_id from get_project_tools first. Use todolist IDs from results to call list_todos.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        todoset_id: z.number().int().positive().describe('The todoset ID from get_project_tools'),
+        page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      },
     },
     async ({ project_id, todoset_id, page }) => {
       try {
@@ -211,16 +200,18 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // list_todos — FR-4.2, FR-4.4
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'list_todos',
-    'List to-do items in a specific to-do list. Returns todo titles, descriptions as markdown, assignees, due dates, completion status, completed_at timestamp, and comments_count. Use todolist_id from list_todolists.',
     {
-      project_id: z.number().int().positive().describe('The Basecamp project ID'),
-      todolist_id: z.number().int().positive().describe('The to-do list ID from list_todolists'),
-      completed: z.boolean().optional().default(false).describe(
-        'If false (default), returns only incomplete todos. If true, returns completed todos.'
-      ),
-      page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      description: 'List to-do items in a specific to-do list. Returns todo titles, descriptions as markdown, assignees, due dates, completion status, completed_at timestamp, and comments_count. Use todolist_id from list_todolists.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        todolist_id: z.number().int().positive().describe('The to-do list ID from list_todolists'),
+        completed: z.boolean().optional().default(false).describe(
+          'If false (default), returns only incomplete todos. If true, returns completed todos.'
+        ),
+        page: z.number().int().positive().optional().default(1).describe('Page number for pagination'),
+      },
     },
     async ({ project_id, todolist_id, completed, page }) => {
       try {
@@ -240,12 +231,14 @@ export function createTools(userId: number, tokenStore: TokenStore): McpServer {
   // -------------------------------------------------------------------------
   // get_todo — FR-4.3, FR-4.4
   // -------------------------------------------------------------------------
-  server.tool(
+  server.registerTool(
     'get_todo',
-    'Get a single Basecamp to-do item with full detail. Returns the todo title, description as markdown, assignees with names and emails, due date, completion status, completed_at timestamp, comments_count, and creation date.',
     {
-      project_id: z.number().int().positive().describe('The Basecamp project ID'),
-      todo_id: z.number().int().positive().describe('The to-do item ID from list_todos'),
+      description: 'Get a single Basecamp to-do item with full detail. Returns the todo title, description as markdown, assignees with names and emails, due date, completion status, completed_at timestamp, comments_count, and creation date.',
+      inputSchema: {
+        project_id: z.number().int().positive().describe('The Basecamp project ID'),
+        todo_id: z.number().int().positive().describe('The to-do item ID from list_todos'),
+      },
     },
     async ({ project_id, todo_id }) => {
       try {
