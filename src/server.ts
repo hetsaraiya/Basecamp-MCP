@@ -3,6 +3,9 @@ import { randomUUID } from 'node:crypto';
 import express from 'express';
 import { tokenStore } from './auth/store.js';
 import { startAuthFlow, handleCallback, getTokenForUser } from './auth/oauth.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createTools } from './tools/tools.js';
 
 export const app = express();
 
@@ -82,6 +85,91 @@ app.get('/oauth/revoke', async (req, res) => {
 
   tokenStore.revoke(basecampUserId);
   res.json({ message: 'Token revoked', basecampUserId });
+});
+
+// ---------------------------------------------------------------------------
+// Session management for Streamable HTTP transport
+// ---------------------------------------------------------------------------
+
+interface Session {
+  transport: StreamableHTTPServerTransport;
+  server: McpServer;
+  userId: number;
+}
+
+// Map from Mcp-Session-Id header value → active session
+// Each session is bound to exactly one basecampUserId (via mcp_token lookup at initialization).
+// Architecture decision (STATE.md 2026-02-19): session-map pattern, unique URL per user.
+const sessions = new Map<string, Session>();
+
+// ---------------------------------------------------------------------------
+// POST /mcp/:userToken — initialize or continue an MCP session
+// GET  /mcp/:userToken — SSE stream for server-sent events
+// DELETE /mcp/:userToken — terminate session
+// ---------------------------------------------------------------------------
+
+app.use(express.json({ type: 'application/json' }));
+
+app.all('/mcp/:userToken', async (req, res) => {
+  const { userToken } = req.params;
+
+  // Resolve the userToken to a TokenRecord — returns 401 if unknown
+  const tokenRecord = tokenStore.getByMcpToken(userToken);
+  if (!tokenRecord) {
+    res.status(401).json({ error: 'Invalid or expired MCP token. Re-authenticate at /oauth/start' });
+    return;
+  }
+
+  const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+  // --- DELETE: terminate an existing session ---
+  if (req.method === 'DELETE') {
+    if (sessionId) {
+      const session = sessions.get(sessionId);
+      if (session) {
+        await session.transport.close();
+        sessions.delete(sessionId);
+      }
+    }
+    res.status(204).end();
+    return;
+  }
+
+  // --- Existing session: route to established transport ---
+  if (sessionId && sessions.has(sessionId)) {
+    const session = sessions.get(sessionId)!;
+    await session.transport.handleRequest(req, res, req.body);
+    return;
+  }
+
+  // --- New session: initialize transport + tools for this user ---
+  // This branch handles the MCP initialize request (first POST, no Mcp-Session-Id yet).
+  // StreamableHTTPServerTransport generates the session ID via sessionIdGenerator.
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: () => randomUUID(),
+    onsessioninitialized: (newSessionId) => {
+      // Bind the new session to this user's server instance.
+      // onsessioninitialized fires synchronously before the response is sent,
+      // so the session is in the Map before any tool calls can arrive.
+      sessions.set(newSessionId, { transport, server, userId: tokenRecord.basecampUserId });
+    },
+  });
+
+  // Create a fresh McpServer with tools bound to this user's basecampUserId.
+  // createTools() is the Phase 3 factory — returns McpServer with all 11 tools.
+  const server = createTools(tokenRecord.basecampUserId, tokenStore);
+
+  // Connect the MCP server to the transport — must happen before handleRequest
+  await server.connect(transport);
+
+  // Register cleanup when transport closes (client disconnect, network drop, etc.)
+  transport.onclose = () => {
+    if (transport.sessionId) {
+      sessions.delete(transport.sessionId);
+    }
+  };
+
+  await transport.handleRequest(req, res, req.body);
 });
 
 // Health check
