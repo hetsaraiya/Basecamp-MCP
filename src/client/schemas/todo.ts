@@ -31,6 +31,8 @@ export const TodoSchema = z.object({
   content: z.string(),
   completed: z.boolean(),
   due_on: z.string().nullable(),
+  completed_at: z.string().nullable().optional(),
+  comments_count: z.number().optional().default(0),
 });
 
 export type Todo = z.infer<typeof TodoSchema>;

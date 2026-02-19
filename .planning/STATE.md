@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Any AI agent can access the full context of a Basecamp project on demand, so it can act intelligently on real project knowledge — not guesses.
-**Current focus:** Phase 2 — API Client Infrastructure
+**Current focus:** Phase 3 — MCP Tool Definitions
 
 ## Current Position
 
-Phase: 2 of 5 (API Client Infrastructure) - In Progress
-Plan: 2 of 3 in phase 2 - COMPLETE
-Status: Phase 2 Plan 2 Complete — Ready for Plan 3 (MCP Tools stub, if applicable)
-Last activity: 2026-02-19 — Plan 02-02 complete: paginate(), htmlToMarkdown(), 6 zod schemas, 7 BasecampClient endpoint methods
+Phase: 2 of 5 (API Client Infrastructure) - Complete
+Plan: Phase 2 fully complete
+Status: Phase 2 Complete — Ready to plan Phase 3
+Last activity: 2026-02-19 — Pre-phase-3 blocker research complete; all blockers resolved; architectural decisions recorded
 
 Progress: [█████░░░░░] 50%
 
@@ -48,6 +48,11 @@ Recent decisions affecting current work:
 - [Research]: SQLite over Redis for token storage (zero infrastructure; survives restarts)
 - [Research]: Streamable HTTP transport required — stdio cannot host OAuth callback or per-user state
 - [Research]: Phase 4 session-to-user binding needs validation against MCP SDK source before implementation
+- [Research resolved 2026-02-19]: StreamableHTTPServerTransport session-to-user binding confirmed via SDK tarball inspection (v1.11.0–1.27.0). Official multi-user pattern uses `onsessioninitialized` + sessionId→transport Map. Auth flows through `req.auth` → `extra.authInfo` from v1.15.0+. Minimum SDK version: `^1.15.0`.
+- [Architecture decision 2026-02-19]: Per-user auth model is unique URL path per user — `/mcp/<uuid>` — no `Authorization` header needed. UUID issued after OAuth and used as route param to look up basecampUserId. Simpler than Bearer token; no middleware needed.
+- [Architecture decision 2026-02-19]: Dock lookup for Phase 3 tools uses a new `getProject(projectId)` method on BasecampClient that returns the project's dock array. Tools find the relevant dock item by `name` field, not `type`.
+- [Research resolved 2026-02-19]: Basecamp OAuth access token TTL is 2 weeks (not hours). Refresh-on-401 + 5-min REFRESH_BUFFER_MS is sufficient. No changes to token store needed.
+- [Research resolved 2026-02-19]: Dock field is `name` (not `type`). Correct values: `message_board`, `todoset`, `vault`, `chat`, `schedule`, `questionnaire`. Previous assumption of Ruby-style `"Message::Board"` was wrong.
 - [Phase 01-01]: better-sqlite3 ^12.0.0 used instead of ^9.0.0 — Node 24 requires v12+ for prebuilt binaries
 - [Phase 01-01]: @types/simple-oauth2 added as devDependency — simple-oauth2 v5 ships no bundled .d.ts files
 - [Phase 01-01]: Type assertion for authorizeURL to pass Basecamp-required type=web_server param not in @types definitions
@@ -69,12 +74,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 4]: `StreamableHTTPServerTransport` session-to-user binding is architectural inference, not a documented SDK pattern. Validate against MCP SDK `^1.6.x` source and published examples before designing the session map.
-- [Research gap]: Exact Basecamp OAuth access token TTL not published — refresh-on-401 strategy handles this, but confirm refresh tokens do not expire on inactivity after first real OAuth flow.
-- [Research gap]: Dock `type` field string values (e.g., `"Message::Board"`) — assumed from docs; confirm against live Basecamp account during Phase 2.
+None — all pre-phase-3 blockers resolved 2026-02-19.
 
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-02-PLAN.md — paginate(), htmlToMarkdown(), 6 content-type schemas, 7 BasecampClient endpoint methods; Phase 2 Plan 2 done; Phase 2 complete
+Stopped at: Pre-phase-3 blocker research complete. Phase 2 done. All 3 blockers resolved. Auth model decided (unique URL per user). Dock lookup decided (getProject method). Ready to run /gsd:plan-phase 3.
 Resume file: None

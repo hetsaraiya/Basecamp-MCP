@@ -23,6 +23,7 @@ export const MessageSchema = z.object({
   updated_at: z.string(),
   url: z.string(),
   content: z.string(),
+  replies_count: z.number().optional().default(0),
 });
 
 export type Message = z.infer<typeof MessageSchema>;

@@ -24,6 +24,7 @@ export const ProjectSchema = z.object({
   url: z.string(),
   status: z.string(),
   description: z.string().default(''),
+  tools: z.array(z.string()).optional().default([]),
 });
 
 export type Project = z.infer<typeof ProjectSchema>;

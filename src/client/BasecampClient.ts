@@ -197,6 +197,7 @@ export class BasecampClient {
   async listProjects(page = 1): Promise<PaginatedResult<Project>> {
     return paginate(this, 'projects.json', page, (raw) => {
       const r = raw as Record<string, unknown>;
+      const dock = (r['dock'] as Array<{ name: string; enabled: boolean }> ?? []);
       return ProjectSchema.parse({
         id: r['id'],
         title: r['name'],
@@ -206,6 +207,7 @@ export class BasecampClient {
         url: r['app_url'],
         status: r['status'],
         description: r['description'] ?? '',
+        tools: dock.filter((d) => d.enabled).map((d) => d.name),
       });
     });
   }
@@ -231,6 +233,7 @@ export class BasecampClient {
         updated_at: r['updated_at'],
         url: r['app_url'],
         content: htmlToMarkdown(r['content'] as string),
+        replies_count: (r['comments_count'] as number) ?? 0,
       });
     });
   }
@@ -284,6 +287,8 @@ export class BasecampClient {
         content: htmlToMarkdown(r['description'] as string),  // description is HTML notes
         completed: r['completed'],
         due_on: r['due_on'] ?? null,
+        completed_at: (r['completed_at'] as string | null) ?? null,
+        comments_count: (r['comments_count'] as number) ?? 0,
       });
     });
   }
@@ -380,5 +385,36 @@ export class BasecampClient {
         download_url: r['download_url'] as string | undefined,
       });
     });
+  }
+
+  /**
+   * getProject — returns the raw Basecamp project JSON including the dock array.
+   *
+   * Used by MCP tools to resolve dock-internal IDs (message_board_id, todoset_id,
+   * vault_id, chat_id) without requiring the agent to supply them (FR-2.4).
+   *
+   * The dock array items have shape: { id, title, name, enabled, position, url, app_url }
+   * where `name` is the dock tool type key. Correct name values:
+   *   'message_board', 'todoset', 'vault', 'chat', 'schedule', 'questionnaire'
+   * NOT the Ruby class names ('Message::Board' etc.) — confirmed 2026-02-19.
+   */
+  async getProject(projectId: number): Promise<{
+    id: number;
+    name: string;
+    description: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    dock: Array<{
+      id: number;
+      title: string;
+      name: string;
+      enabled: boolean;
+      position: number;
+      url: string;
+      app_url: string;
+    }>;
+  }> {
+    return this.get(`projects/${projectId}.json`);
   }
 }
