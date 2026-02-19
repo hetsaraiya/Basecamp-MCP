@@ -36,6 +36,7 @@ Progress: [██████░░░░] 60%
 - Trend: stable
 
 *Updated after each plan completion*
+| Phase 03-mcp-tool-definitions P02 | 5 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 03-01]: All tool handlers use static top-level imports (htmlToMarkdown, MessageSchema, TodoSchema) — no dynamic await import() calls
 - [Phase 03-01]: list_projects and list_todos filter results client-side after paginate() — Basecamp API returns mixed statuses/completion states
 - [Phase 03-01]: get_message and get_todo use client.get<>() directly (single resource fetch, no paginate wrapper needed)
+- [Phase 03-02]: server.registerTool() used for all 4 new tools — consistent with existing 7 tools; not the deprecated server.tool() form
+- [Phase 03-02]: list_campfire_lines effectiveSince: defaults to 24h ago only when both since and limit are undefined — explicit limit with no since means 'most recent N', not time-filtered (FR-6.2)
 
 ### Pending Todos
 
