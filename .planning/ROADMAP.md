@@ -43,8 +43,8 @@ Any OpenXcell team member can connect their AI agent to a running MCP server, au
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: OAuth flow — Express server, `/oauth/start`, `/oauth/callback`, `simple-oauth2` integration, account_id resolution from Launchpad
-- [ ] 01-02: Token store — SQLite schema, `TokenStore` class (read/write/refresh/revoke), per-user mutex for refresh races, `/oauth/revoke` endpoint
+- [ ] 01-01-PLAN.md — Project scaffolding + OAuth flow (package.json, tsconfig, Express server, `/oauth/start`, `/oauth/callback`, `simple-oauth2`, account_id resolution from Launchpad)
+- [ ] 01-02-PLAN.md — Token store (SQLite schema, `TokenStore` class, per-user mutex, `getTokenForUser()` with auto-refresh, `TOKEN_EXPIRED` error, `/oauth/revoke` endpoint)
 
 ---
 
