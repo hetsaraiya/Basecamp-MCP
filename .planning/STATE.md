@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 2 of 5 (API Client Infrastructure) - In Progress
-Plan: 1 of 3 in phase 2 - COMPLETE
-Status: Phase 2 Plan 1 Complete — Ready for Plan 2 (Content Methods)
-Last activity: 2026-02-19 — Plan 02-01 complete: BasecampClient with got v14, rate-limit wrapper, concurrency semaphore
+Plan: 2 of 3 in phase 2 - COMPLETE
+Status: Phase 2 Plan 2 Complete — Ready for Plan 3 (MCP Tools stub, if applicable)
+Last activity: 2026-02-19 — Plan 02-02 complete: paginate(), htmlToMarkdown(), 6 zod schemas, 7 BasecampClient endpoint methods
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 4 min
-- Total execution time: 12 min
+- Total execution time: 16 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-oauth-foundation | 2 | 8 min | 4 min |
-| 02-api-client-infrastructure | 1 | 4 min | 4 min |
+| 02-api-client-infrastructure | 2 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 3 min, 4 min
+- Last 5 plans: 5 min, 3 min, 4 min, 4 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -59,6 +59,9 @@ Recent decisions affecting current work:
 - [Phase 02-01]: got built-in retry disabled (retry: { limit: 0 }) — withRateLimit owns all 429 retry logic, prevents double-retry
 - [Phase 02-01]: unwrapHookError() added — got wraps beforeRequest hook errors in RequestError; callers must receive ReadOnlyError directly
 - [Phase 02-01]: getRaw() returns full Response<unknown> for Link header access by Plan 02-02 pagination layer
+- [Phase 02-02]: node-html-parser chosen over turndown/marked — handles Basecamp custom tags (bc-attachment, mention, bc-gallery) natively via tagName switch; lightweight ESM-compatible
+- [Phase 02-02]: paginate<T>() transform callback pattern — schema parse inside callback keeps paginate() fully generic; field-mapping logic co-located with field-mapping table
+- [Phase 02-02]: AttachmentSchema content hardcoded to '' at call site (not in schema) — eliminates any accidental binary content data path (NFR-4.4)
 
 ### Pending Todos
 
@@ -73,5 +76,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 02-01-PLAN.md — BasecampClient (got v14), withRateLimit, computeBackoffDelay, concurrency semaphore; Phase 2 Plan 1 done; Plan 02-02 next
+Stopped at: Completed 02-02-PLAN.md — paginate(), htmlToMarkdown(), 6 content-type schemas, 7 BasecampClient endpoint methods; Phase 2 Plan 2 done; Phase 2 complete
 Resume file: None
