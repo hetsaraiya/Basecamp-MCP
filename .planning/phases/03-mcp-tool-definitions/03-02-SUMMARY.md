@@ -18,6 +18,7 @@ provides:
   - "list_campfire_lines: defaults to last 24h when neither since nor limit specified (FR-6.2)"
   - "list_attachments: metadata-only mapping — filename, content_type, byte_size, download_url, creator, created_at (FR-7.2)"
   - "list_documents: uses DocumentSummarySchema — truncated content preview, truncated:true flag (FR-5.1)"
+  - "Phase 3 complete: all 11 tools human-verified in MCP Inspector against real Basecamp data"
 affects:
   - phase-04-transport-and-agent-integration
 
@@ -55,14 +56,14 @@ completed: 2026-02-19
 
 # Phase 3 Plan 02: MCP Tool Definitions Summary
 
-**4 remaining tools (list_documents, get_document, list_campfire_lines, list_attachments) added to createTools() factory via server.registerTool(), plus StdioServerTransport stdio entry point in src/mcp.ts for MCP Inspector testing**
+**4 remaining tools (list_documents, get_document, list_campfire_lines, list_attachments) added to createTools() factory via server.registerTool(), plus StdioServerTransport stdio entry point in src/mcp.ts — all 11 tools human-verified in MCP Inspector against real Basecamp data**
 
 ## Performance
 
 - **Duration:** 5 min
 - **Started:** 2026-02-19T07:55:13Z
 - **Completed:** 2026-02-19T08:00:00Z
-- **Tasks:** 1 of 2 automated (Task 2 is human verification checkpoint)
+- **Tasks:** 2 of 2 complete (Task 1 automated, Task 2 human-verified checkpoint)
 - **Files modified:** 3
 
 ## Accomplishments
@@ -70,13 +71,16 @@ completed: 2026-02-19
 - Extended createTools() from 7 to 11 tools by adding list_documents, get_document, list_campfire_lines, list_attachments — all using server.registerTool() pattern consistent with existing tools
 - Created src/mcp.ts stdio entry point: reads userId from BASECAMP_TEST_USER_ID, constructs createTools(userId, tokenStore), wires StdioServerTransport, exits cleanly on SIGINT
 - list_campfire_lines implements FR-6.2 client-side: defaults to 24h window when neither since nor limit specified; applies since filter and limit slice after paginate()
+- Human verified in MCP Inspector: all 11 tools listed with correct names and schemas, list_projects returns real Basecamp projects, list_campfire_lines 24h default confirmed, list_documents truncated:true confirmed
 
 ## Task Commits
 
 Each task was committed atomically:
 
 1. **Task 1: Add 4 remaining tools to createTools() and create src/mcp.ts** - `b247de0` (feat)
-2. **Task 2: MCP Inspector verification** - awaiting human verification (checkpoint)
+2. **Task 2: MCP Inspector verification** - human-verified PASSED (checkpoint, no code commit)
+
+**Plan metadata:** `d34a198` (docs: complete plan — 11 tools in createTools(), stdio entry point)
 
 ## Files Created/Modified
 
@@ -110,22 +114,22 @@ Each task was committed atomically:
 
 ## Issues Encountered
 
-None - TypeScript compiled clean on first attempt. All 11 tool registrations verified by grep.
+None - TypeScript compiled clean on first attempt. All 11 tool registrations verified by grep. MCP Inspector checkpoint passed without issues.
 
 ## User Setup Required
 
-**MCP Inspector verification requires real Basecamp OAuth token.** Steps for Task 2 checkpoint:
-1. Run `npm run dev` and complete OAuth at http://localhost:3000/oauth/start
-2. Find userId: `sqlite3 tokens.db "SELECT basecamp_user_id FROM tokens LIMIT 1;"`
-3. Start MCP server: `BASECAMP_TEST_USER_ID=<id> npm run mcp`
-4. Open MCP Inspector: `npx @modelcontextprotocol/inspector`
+MCP Inspector verification completed by human. Steps performed:
+1. OAuth completed at http://localhost:3000/oauth/start
+2. userId retrieved from tokens.db
+3. MCP server started: `BASECAMP_TEST_USER_ID=<id> npm run mcp`
+4. MCP Inspector opened and connected to stdio process
 
 ## Next Phase Readiness
 
 - createTools() factory complete with all 11 tools — ready for Phase 4 transport wiring
 - src/mcp.ts stdio entry point available for continued Inspector testing in Phase 4
 - Phase 4 will create StreamableHTTPServerTransport entry point alongside this stdio one
-- No blockers — pending only human MCP Inspector verification (Task 2 checkpoint)
+- Phase 3 fully complete — no blockers
 
 ## Self-Check: PASSED
 
@@ -133,8 +137,10 @@ None - TypeScript compiled clean on first attempt. All 11 tool registrations ver
 - FOUND: src/mcp.ts
 - FOUND: package.json has "mcp" script
 - FOUND commit: b247de0 (Task 1)
+- FOUND commit: d34a198 (plan metadata)
 - tsc --noEmit: PASS (0 errors)
 - server.registerTool() count: 11
+- MCP Inspector: HUMAN VERIFIED PASSED
 
 ---
 *Phase: 03-mcp-tool-definitions*

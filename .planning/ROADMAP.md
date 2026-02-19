@@ -18,8 +18,8 @@ Any OpenXcell team member can connect their AI agent to a running MCP server, au
 ## Phases
 
 - [x] **Phase 1: OAuth Foundation** - Any team member can authenticate with Basecamp and receive a stored, auto-refreshing token (completed 2026-02-19)
-- [ ] **Phase 2: API Client Infrastructure** - A BasecampClient that handles all 6 content types with rate limiting, pagination, and HTML-to-markdown
-- [ ] **Phase 3: MCP Tool Definitions** - All 11 MCP tools functional and testable in MCP Inspector
+- [x] **Phase 2: API Client Infrastructure** - A BasecampClient that handles all 6 content types with rate limiting, pagination, and HTML-to-markdown (completed 2026-02-19)
+- [x] **Phase 3: MCP Tool Definitions** - All 11 MCP tools functional and testable in MCP Inspector (completed 2026-02-19)
 - [ ] **Phase 4: Transport and Agent Integration** - Real agents (Claude Desktop, Cursor) can connect and use tools with per-user auth
 - [ ] **Phase 5: Hardening** - Production-ready for the OpenXcell team
 
@@ -65,7 +65,7 @@ Plans:
 
 Plans:
 - [x] 02-01: HTTP client core — `got` v14 instance, `withRateLimit()` (Retry-After + exponential backoff + jitter), concurrent request cap, read-only enforcement
-- [ ] 02-02: Content layer — `paginate()` following Link headers, HTML-to-markdown pipeline (including `<bc-attachment>`, `<mention>`, `<bc-gallery>`), zod response schemas for all 6 content types, response size enforcement (100-item / 50KB cap)
+- [x] 02-02: Content layer — `paginate()` following Link headers, HTML-to-markdown pipeline (including `<bc-attachment>`, `<mention>`, `<bc-gallery>`), zod response schemas for all 6 content types, response size enforcement (100-item / 50KB cap)
 
 ---
 
@@ -85,8 +85,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — SDK install + BasecampClient.getProject() + typed error module (errors.ts) + createTools() factory with 7 tools: `list_projects`, `get_project_tools`, `list_messages`, `get_message`, `list_todolists`, `list_todos`, `get_todo`
-- [ ] 03-02-PLAN.md — 4 remaining tools (`list_documents`, `get_document`, `list_campfire_lines`, `list_attachments`) + stdio entry point (src/mcp.ts) + MCP Inspector verification checkpoint
+- [x] 03-01-PLAN.md — SDK install + BasecampClient.getProject() + typed error module (errors.ts) + createTools() factory with 7 tools: `list_projects`, `get_project_tools`, `list_messages`, `get_message`, `list_todolists`, `list_todos`, `get_todo`
+- [x] 03-02-PLAN.md — 4 remaining tools (`list_documents`, `get_document`, `list_campfire_lines`, `list_attachments`) + stdio entry point (src/mcp.ts) + MCP Inspector verification checkpoint
 
 ---
 
@@ -207,8 +207,8 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. OAuth Foundation | 2/2 | Complete   | 2026-02-19 |
-| 2. API Client Infrastructure | 1/2 | In Progress | - |
-| 3. MCP Tool Definitions | 1/2 | In Progress|  |
+| 1. OAuth Foundation | 2/2 | Complete | 2026-02-19 |
+| 2. API Client Infrastructure | 2/2 | Complete | 2026-02-19 |
+| 3. MCP Tool Definitions | 2/2 | Complete | 2026-02-19 |
 | 4. Transport and Agent Integration | 0/2 | Not started | - |
 | 5. Hardening | 0/2 | Not started | - |
