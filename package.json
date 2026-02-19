@@ -2,21 +2,24 @@
   "name": "basecamp-mcp",
   "version": "0.1.0",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "better-sqlite3": "^12.0.0",
     "express": "^4.21.0",
-    "simple-oauth2": "^5.0.0",
-    "better-sqlite3": "^12.0.0"
+    "simple-oauth2": "^5.0.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
     "@types/better-sqlite3": "^7.6.0",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "@types/simple-oauth2": "^5.0.8",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0"
   }
