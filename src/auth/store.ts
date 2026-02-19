@@ -36,6 +36,13 @@ export class TokenStore {
         updated_at       INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
       );
     `);
+
+    // Migration: add mcp_token column (idempotent — ALTER TABLE fails silently if column exists)
+    try {
+      this.db.exec(`ALTER TABLE tokens ADD COLUMN mcp_token TEXT;`);
+    } catch {
+      // Column already exists — safe to ignore
+    }
   }
 
   save(record: TokenRecord): void {
@@ -72,6 +79,36 @@ export class TokenStore {
 
   revoke(basecampUserId: number): void {
     this.db.prepare('DELETE FROM tokens WHERE basecamp_user_id = ?').run(basecampUserId);
+  }
+
+  /**
+   * saveMcpToken — stores the user's personal MCP URL key.
+   *
+   * Called once after OAuth completes. The mcp_token is a UUID issued by the
+   * server and used as the path param in /mcp/:userToken to route MCP sessions
+   * to the correct basecampUserId without requiring Authorization headers.
+   *
+   * Architecture decision (STATE.md 2026-02-19): unique URL per user, no Bearer token.
+   */
+  saveMcpToken(basecampUserId: number, mcpToken: string): void {
+    this.db.prepare(
+      'UPDATE tokens SET mcp_token = ? WHERE basecamp_user_id = ?'
+    ).run(mcpToken, basecampUserId);
+  }
+
+  /**
+   * getByMcpToken — resolves an mcp_token URL key to a TokenRecord.
+   *
+   * Called by the /mcp/:userToken Express route to authenticate the request.
+   * Returns null if the token is unknown or has been revoked (mcp_token IS NULL).
+   */
+  getByMcpToken(mcpToken: string): TokenRecord | null {
+    const row = this.db.prepare(
+      'SELECT * FROM tokens WHERE mcp_token = ?'
+    ).get(mcpToken) as Record<string, unknown> | undefined;
+
+    if (!row) return null;
+    return this.rowToRecord(row);
   }
 
   private rowToRecord(row: Record<string, unknown>): TokenRecord {
